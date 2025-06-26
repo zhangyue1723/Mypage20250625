@@ -13,36 +13,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
+      - name: Sync Source Code to Server
+        uses: appleboy/rsync-deploy@v1
         with:
-          node-version: '18'
-      
-      - name: Clean Install, Build, and Sync
-        run: |
-          # Clean slate
-          rm -rf .next
-          rm -rf node_modules
+          source: "./" # Sync the entire project source
+          target: "/var/www/mypage"
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          flags: "-avz --delete"
+          exclude: |
+            .git*
+            node_modules
+            .next
 
-          npm install
-          npm run build -- --no-lint
-          
-          # Create a temporary file for the SSH key
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > private_key.pem
-          chmod 600 private_key.pem
-          
-          rsync -avz --delete \
-            -e "ssh -o StrictHostKeyChecking=no -i private_key.pem" \
-            --exclude="/.next/cache/" \
-            --exclude="**/*.db" \
-            --exclude="**/*.db-journal" \
-            .next public prisma package.json package-lock.json next.config.ts tsconfig.json \
-            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/var/www/mypage/
-          
-          # Clean up the key file
-          rm private_key.pem
-
-      - name: Restart application on server
+      - name: Build and Restart on Server
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -51,23 +36,24 @@ jobs:
           port: 22
           script: |
             # Navigate to the project directory
-            cd /var/www/mypage
+            cd /var/w ww/mypage
             
-            # Create the production .env file with secrets IN THE CORRECT DIRECTORY
+            # Create the production .env file
             echo "DATABASE_URL='file:./prisma/dev.db'" > .env
             echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
             
-            # Install production dependencies
-            npm install --omit=dev
+            # Install all dependencies and build *on the server*
+            npm install
+            npm run build -- --no-lint
             
-            # Generate the Prisma client
+            # Generate Prisma client (important after install)
             npx prisma generate
             
-            # Push the schema to the database (this will now read the .env file)
+            # Push DB schema
             npx prisma db push
 
-            # Use pm2 to restart the application (it will automatically read the .env file)
+            # Restart the app
             pm2 restart mypage || pm2 start "npm start" --name mypage
             
-            # Save the PM2 process list
+            # Save the process list
             pm2 save 
