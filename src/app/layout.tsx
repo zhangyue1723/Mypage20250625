@@ -27,6 +27,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${lato.variable} ${robotoSlab.variable} antialiased`}>
+      <head />
       <body>
         <div className="max-w-8xl mx-auto">
             <main>
