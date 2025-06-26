@@ -30,7 +30,7 @@ jobs:
             --exclude ".git*" \
             --exclude "node_modules" \
             --exclude ".next" \
-            ./ /var/www/mypage/
+            ./ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/var/www/mypage/
           rm private_key.pem
 
       - name: Build and Restart on Server
