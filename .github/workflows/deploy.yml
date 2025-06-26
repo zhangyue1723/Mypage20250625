@@ -53,6 +53,9 @@ jobs:
             # Generate the Prisma client
             npx prisma generate
             
+            # Push the schema to the database
+            npx prisma db push
+            
             # Use pm2 to start or restart the application
             pm2 start "npm start" --name mypage --update-env || pm2 restart mypage
             
