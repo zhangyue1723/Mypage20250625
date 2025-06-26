@@ -30,7 +30,7 @@ jobs:
           rsync -avz --delete \
             -e "ssh -o StrictHostKeyChecking=no -i private_key.pem" \
             --exclude="/.next/cache/" \
-            .next public package.json package-lock.json next.config.ts tsconfig.json \
+            .next public prisma package.json package-lock.json next.config.ts tsconfig.json \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/var/www/mypage/
           
           # Clean up the key file
