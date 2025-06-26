@@ -1,9 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import MarkdownEditor from '../MarkdownEditor';
+import { useRouter, useParams } from 'next/navigation';
+import dynamic from 'next/dynamic';
 // import type { Tutorial } from '@prisma/client';
+
+const MarkdownEditor = dynamic(
+  () => import('../MarkdownEditor'),
+  { ssr: false }
+);
 
 type EditTutorialPageProps = {
   params: {

@@ -2,7 +2,12 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import MarkdownEditor from '../MarkdownEditor';
+import dynamic from 'next/dynamic';
+
+const MarkdownEditor = dynamic(
+  () => import('../MarkdownEditor'),
+  { ssr: false }
+);
 
 export default function NewTutorialPage() {
   const [title, setTitle] = useState('');
