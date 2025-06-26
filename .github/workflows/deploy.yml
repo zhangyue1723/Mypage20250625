@@ -61,6 +61,15 @@ jobs:
             # Create admin user (idempotent)
             npx ts-node --project prisma/tsconfig.seed.json prisma/registerAdmin.ts
 
+            # --- WORKAROUND FOR PRISMA + NEXT.JS BUNDLER BUG ---
+            # Find the actual engine file location in node_modules
+            QUERY_ENGINE_SOURCE=$(find ./node_modules -name "libquery_engine-rhel-openssl-1.1.x.so.node" | head -n 1)
+            # Copy it to the location where Next.js server expects it
+            if [ -f "$QUERY_ENGINE_SOURCE" ]; then
+              cp "$QUERY_ENGINE_SOURCE" "./.next/server/"
+            fi
+            # --- END WORKAROUND ---
+
             # Restart the app
             pm2 restart mypage || pm2 start "npm start" --name mypage
             
