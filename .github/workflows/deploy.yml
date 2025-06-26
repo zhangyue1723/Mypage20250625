@@ -50,6 +50,9 @@ jobs:
             # Install production dependencies
             npm install --omit=dev
             
+            # Generate the Prisma client
+            npx prisma generate
+            
             # Use pm2 to start or restart the application
             pm2 start "npm start" --name mypage --update-env || pm2 restart mypage
             
