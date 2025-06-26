@@ -1,0 +1,49 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install, Build, and Sync Files
+        run: |
+          npm install
+          npm run build
+          rsync -avz --delete \
+            -e "ssh -o StrictHostKeyChecking=no" \
+            --exclude="/.next/cache/" \
+            .next public package.json package-lock.json next.config.ts tsconfig.json \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/var/www/mypage/
+
+      - name: Restart application on server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            # Navigate to the project directory
+            cd /var/www/mypage
+            
+            # Install production dependencies
+            npm install --omit=dev
+            
+            # Use pm2 to start or restart the application
+            pm2 start "npm start" --name mypage --update-env || pm2 restart mypage
+            
+            # Save the PM2 process list
+            pm2 save 
