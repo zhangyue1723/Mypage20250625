@@ -47,17 +47,21 @@ jobs:
             # Navigate to the project directory
             cd /var/www/mypage
             
+            # Create the production .env file with secrets
+            echo "DATABASE_URL='file:/var/www/mypage/prisma/dev.db'" > .env
+            echo "JWT_SECRET='${{ secrets.JWT_SECRET }}'" >> .env
+            
             # Install production dependencies
             npm install --omit=dev
             
             # Generate the Prisma client
             npx prisma generate
             
-            # Push the schema to the database
+            # Push the schema to the database (this will now read the .env file)
             npx prisma db push
-            
-            # Use pm2 to start or restart the application
-            pm2 start "npm start" --name mypage --update-env || pm2 restart mypage
+
+            # Use pm2 to restart the application (it will automatically read the .env file)
+            pm2 restart mypage || pm2 start "npm start" --name mypage
             
             # Save the PM2 process list
             pm2 save 
