@@ -23,7 +23,7 @@ jobs:
           npm install
           npm run build -- --no-lint
           rsync -avz --delete \
-            -e "ssh -o StrictHostKeyChecking=no" \
+            -e "ssh -o StrictHostKeyChecking=no -p 2222" \
             --exclude="/.next/cache/" \
             .next public package.json package-lock.json next.config.ts tsconfig.json \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/var/www/mypage/
@@ -34,7 +34,7 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 22
+          port: 2222
           script: |
             # Navigate to the project directory
             cd /var/www/mypage
