@@ -17,6 +17,18 @@ async function getTutorial(slug: string) {
     return tutorial;
 }
 
+export async function generateStaticParams() {
+    const tutorials = await prisma.tutorial.findMany({
+        select: {
+            slug: true,
+        },
+    });
+
+    return tutorials.map((tutorial) => ({
+        slug: tutorial.slug,
+    }));
+}
+
 export async function generateMetadata(props: { params: { slug: string } }): Promise<Metadata> {
     const tutorial = await getTutorial(props.params.slug);
     return {
