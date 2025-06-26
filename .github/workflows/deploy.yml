@@ -18,8 +18,12 @@ jobs:
         with:
           node-version: '18'
       
-      - name: Install, Build, and Sync Files
+      - name: Clean Install, Build, and Sync
         run: |
+          # Clean slate
+          rm -rf .next
+          rm -rf node_modules
+
           npm install
           npm run build -- --no-lint
           
