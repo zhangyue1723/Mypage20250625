@@ -55,14 +55,26 @@ jobs:
             
             # Install all dependencies and build *on the server*
             npm install
-            npm run build -- --no-lint
-            
-            # Generate Prisma client (important after install)
-            npx prisma generate
-            
-            # Push DB schema
+
+            # Run prisma db push
             npx prisma db push
 
+            # Build the Next.js application with explicit error handling
+            echo "--- Starting application build... ---"
+            npm run build
+            BUILD_EXIT_CODE=$?
+            echo "--- Build process finished with exit code: $BUILD_EXIT_CODE ---"
+
+            if [ $BUILD_EXIT_CODE -ne 0 ]; then
+              echo "Build failed. Aborting deployment."
+              exit 1
+            fi
+
+            if [ ! -d ".next" ]; then
+              echo "Build directory '.next' not found after successful build. Aborting deployment."
+              exit 1
+            fi
+            
             # Create admin user (idempotent)
             npx ts-node --project prisma/tsconfig.seed.json prisma/registerAdmin.ts
 
@@ -75,8 +87,10 @@ jobs:
             fi
             # --- END WORKAROUND ---
 
-            # Restart the app
-            pm2 restart mypage || pm2 start "npm start" --name mypage
+            # Restart the application with PM2
+            echo "--- Build successful. Restarting application with PM2... ---"
+            pm2 restart mypage
+            echo "--- Deployment script finished. ---"
             
             # Save the process list
             pm2 save 
