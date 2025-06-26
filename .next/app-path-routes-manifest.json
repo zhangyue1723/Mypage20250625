@@ -1,0 +1,13 @@
+{
+  "/api/auth/login/route": "/api/auth/login",
+  "/api/tutorials/[slug]/route": "/api/tutorials/[slug]",
+  "/api/tutorials/route": "/api/tutorials",
+  "/favicon.ico/route": "/favicon.ico",
+  "/_not-found/page": "/_not-found",
+  "/admin/editor/[slug]/page": "/admin/editor/[slug]",
+  "/admin/dashboard/page": "/admin/dashboard",
+  "/admin/login/page": "/admin/login",
+  "/admin/editor/new/page": "/admin/editor/new",
+  "/page": "/",
+  "/tutorials/[slug]/page": "/tutorials/[slug]"
+}

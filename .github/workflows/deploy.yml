@@ -13,6 +13,34 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Deploy to Server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # Navigate to the app directory
+            cd /var/www/mypage
+
+            # The git pull might fail if there are untracked local changes.
+            # A hard reset ensures the server is a perfect mirror of the repo.
+            git fetch --all
+            git reset --hard origin/main
+            git pull origin main
+
+            # We are now deploying a pre-built package.
+            # We must ensure the server has the exact same node_modules
+            # that were used to create the build.
+            echo "--- Installing dependencies to match the build env ---"
+            npm install
+
+            # No more build steps on the server.
+            # Just restart the application.
+            echo "--- Restarting application with PM2... ---"
+            pm2 restart mypage || pm2 start "npm start" --name mypage
+            echo "--- Deployment script finished. ---"
+
       - name: Create Deploy Directory
         uses: appleboy/ssh-action@master
         with:
