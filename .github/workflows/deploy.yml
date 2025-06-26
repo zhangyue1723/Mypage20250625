@@ -58,6 +58,9 @@ jobs:
             # Push DB schema
             npx prisma db push
 
+            # Create admin user (idempotent)
+            npx ts-node --project prisma/tsconfig.seed.json prisma/registerAdmin.ts
+
             # Restart the app
             pm2 restart mypage || pm2 start "npm start" --name mypage
             
