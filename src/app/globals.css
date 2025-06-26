@@ -1,0 +1,19 @@
+@import "tailwindcss";
+@import "highlight.js/styles/xcode.css";
+
+@theme {
+  --color-brand-blue: #2980B9;
+  --color-text-main: #343131;
+  --color-text-heading: #2c3e50;
+  --color-bg-main: #FFFFFF;
+  --color-bg-sidebar: #F2F2F2;
+  --color-bg-code: #F8F8F8;
+  --color-border-main: #E1E4E5;
+  --color-note-green-bg: #E7F4E7;
+  --color-note-green-border: #27AE60;
+}
+
+body {
+    /* These apply the default colors and fonts defined in tailwind.config.ts */
+    @apply bg-bg-main text-text-main font-sans;
+}
