@@ -5,11 +5,15 @@ import { useRouter } from 'next/navigation';
 import MarkdownEditor from '../MarkdownEditor';
 // import type { Tutorial } from '@prisma/client';
 
+type EditTutorialPageProps = {
+  params: {
+    slug: string;
+  };
+};
+
 export default function EditTutorialPage({
   params,
-}: {
-  params: { slug: string };
-}) {
+}: EditTutorialPageProps) {
   const [tutorial, setTutorial] = useState<any | null>(null);
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
