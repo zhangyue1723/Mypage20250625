@@ -42,7 +42,12 @@ jobs:
           port: 22
           script: |
             # Navigate to the project directory
-            cd /var/w ww/mypage
+            cd /var/www/mypage
+
+            # Aggressive cleanup to ensure a pristine environment
+            echo "--- Cleaning up old artifacts ---"
+            rm -rf .next
+            rm -rf node_modules
             
             # Create the production .env file
             echo "DATABASE_URL='file:./prisma/dev.db'" > .env
