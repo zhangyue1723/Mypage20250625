@@ -48,8 +48,8 @@ jobs:
             cd /var/www/mypage
             
             # Create the production .env file with secrets
-            echo "DATABASE_URL='file:/var/www/mypage/prisma/dev.db'" > .env
-            echo "JWT_SECRET='${{ secrets.JWT_SECRET }}'" >> .env
+            echo "DATABASE_URL='file:/root/mypage/prisma/dev.db'" > /root/mypage/.env
+            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> /root/mypage/.env
             
             # Install production dependencies
             npm install --omit=dev
@@ -65,3 +65,13 @@ jobs:
             
             # Save the PM2 process list
             pm2 save 
+
+      - name: Restart PM2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            pm2 restart mypage
