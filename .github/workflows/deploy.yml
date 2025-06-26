@@ -22,11 +22,19 @@ jobs:
         run: |
           npm install
           npm run build -- --no-lint
+          
+          # Create a temporary file for the SSH key
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > private_key.pem
+          chmod 600 private_key.pem
+          
           rsync -avz --delete \
-            -e "ssh -o StrictHostKeyChecking=no -p 2222" \
+            -e "ssh -o StrictHostKeyChecking=no -i private_key.pem" \
             --exclude="/.next/cache/" \
             .next public package.json package-lock.json next.config.ts tsconfig.json \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/var/www/mypage/
+          
+          # Clean up the key file
+          rm private_key.pem
 
       - name: Restart application on server
         uses: appleboy/ssh-action@master
@@ -34,7 +42,7 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 2222
+          port: 22
           script: |
             # Navigate to the project directory
             cd /var/www/mypage
