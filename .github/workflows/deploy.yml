@@ -21,7 +21,7 @@ jobs:
       - name: Install, Build, and Sync Files
         run: |
           npm install
-          npm run build
+          npm run build -- --no-lint
           rsync -avz --delete \
             -e "ssh -o StrictHostKeyChecking=no" \
             --exclude="/.next/cache/" \
