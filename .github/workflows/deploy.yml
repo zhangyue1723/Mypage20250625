@@ -30,6 +30,8 @@ jobs:
           rsync -avz --delete \
             -e "ssh -o StrictHostKeyChecking=no -i private_key.pem" \
             --exclude="/.next/cache/" \
+            --exclude="**/*.db" \
+            --exclude="**/*.db-journal" \
             .next public prisma package.json package-lock.json next.config.ts tsconfig.json \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/var/www/mypage/
           
