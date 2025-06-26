@@ -3,17 +3,17 @@ import prisma from '@/lib/prisma';
 import { verifyAuth } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
 
-type RouteProps = {
-  params: Promise<{ slug: string }>
-}
+type RouteContext = {
+  params: { slug: string };
+};
 
 // GET a single tutorial
 export async function GET(
   request: Request,
-  { params }: RouteProps
+  { params }: RouteContext
 ) {
   try {
-    const { slug } = await params;
+    const { slug } = params;
     const tutorial = await prisma.tutorial.findUnique({
       where: { slug },
     });
@@ -35,7 +35,7 @@ export async function GET(
 // UPDATE a tutorial
 export async function PUT(
   request: Request,
-  { params: paramsPromise }: RouteProps
+  { params }: RouteContext
 ) {
   const verification = await verifyAuth(request);
   if (!verification.user) {
@@ -43,7 +43,7 @@ export async function PUT(
   }
 
   try {
-    const { slug: currentSlug } = await paramsPromise;
+    const { slug: currentSlug } = params;
     const body = await request.json();
     const { title, slug, content } = body;
 
@@ -94,7 +94,7 @@ export async function PUT(
 // DELETE a tutorial
 export async function DELETE(
     request: Request,
-    { params }: RouteProps
+    { params }: RouteContext
 ) {
     const verification = await verifyAuth(request);
     if (!verification.user) {
@@ -102,7 +102,7 @@ export async function DELETE(
     }
 
     try {
-        const { slug } = await params;
+        const { slug } = params;
         await prisma.tutorial.delete({
             where: { slug },
         });
