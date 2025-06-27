@@ -13,62 +13,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Deploy, Build, and Restart
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            # Navigate to the application directory
-            cd /var/www/mypage
-
-            # Aggressively clean up old artifacts to ensure a pristine environment
-            echo "--- (1/7) Cleaning up old artifacts... ---"
-            rm -rf .next
-            rm -rf node_modules
-
-            # Fetch the absolute latest version from the repository
-            echo "--- (2/7) Fetching latest code... ---"
-            git fetch --all
-            git reset --hard origin/main
-
-            # Create the .env file from secrets for the application to use
-            echo "--- (3/7) Creating .env file... ---"
-            echo "DATABASE_URL='${{ secrets.DATABASE_URL }}'" > .env
-            echo "JWT_SECRET='${{ secrets.JWT_SECRET }}'" >> .env
-
-            # Forcefully clean the npm cache to eliminate potential corruption
-            echo "--- (4/8) Cleaning npm cache... ---"
-            npm cache clean --force
-
-            # Install dependencies using 'npm ci' for a clean, reliable install
-            echo "--- (5/8) Installing dependencies with 'npm ci'... ---"
-            npm ci
-
-            # Ensure the database schema is up to date
-            echo "--- (6/8) Pushing database schema... ---"
-            npx prisma db push
-            
-            # This script needs ts-node, which we should have from npm ci
-            echo "--- (7/8) Ensuring admin user exists (Idempotent)... ---"
-            npm run register-admin
-
-            # Build the application on the server
-            echo "--- (8/8) Building application... ---"
-            npm run build
-
-            # Atomically delete and restart the application with PM2
-            echo "--- (Final Step) Restarting application via PM2... ---"
-            pm2 delete mypage || true
-            pm2 start "npm start" --name mypage
-            
-            echo "--- Deployment FINISHED ---"
-
       - name: Create Deploy Directory
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.SERVER_HOST }}
+          host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: mkdir -p /var/www/mypage
@@ -82,13 +30,13 @@ jobs:
             --exclude ".git*" \
             --exclude "node_modules" \
             --exclude ".next" \
-            ./ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/var/www/mypage/
+            ./ ${{ secrets.SERVER_USER }}@${{ secrets.SSH_HOST }}:/var/www/mypage/
           rm private_key.pem
 
       - name: Build and Restart on Server
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.SERVER_HOST }}
+          host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
@@ -97,22 +45,29 @@ jobs:
             cd /var/www/mypage
 
             # Aggressive cleanup to ensure a pristine environment
-            echo "--- Cleaning up old artifacts ---"
+            echo "--- (1/8) Cleaning up old artifacts ---"
             rm -rf .next
             rm -rf node_modules
             
             # Create the production .env file
-            echo "DATABASE_URL='file:./prisma/dev.db'" > .env
-            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
+            echo "--- (2/8) Creating .env file ---"
+            echo "DATABASE_URL='${{ secrets.DATABASE_URL }}'" > .env
+            echo "JWT_SECRET='${{ secrets.JWT_SECRET }}'" >> .env
             
-            # Install all dependencies and build *on the server*
-            npm install
+            # Forcefully clean the npm cache
+            echo "--- (3/8) Cleaning npm cache ---"
+            npm cache clean --force
+            
+            # Install dependencies using npm ci for deterministic builds
+            echo "--- (4/8) Installing dependencies with npm ci ---"
+            npm ci
 
             # Run prisma db push
+            echo "--- (5/8) Pushing database schema ---"
             npx prisma db push
 
             # Build the Next.js application with explicit error handling
-            echo "--- Starting application build... ---"
+            echo "--- (6/8) Starting application build ---"
             npm run build
             BUILD_EXIT_CODE=$?
             echo "--- Build process finished with exit code: $BUILD_EXIT_CODE ---"
@@ -128,21 +83,14 @@ jobs:
             fi
             
             # Create admin user (idempotent)
+            echo "--- (7/8) Ensuring admin user exists ---"
             npm run register-admin
 
-            # --- WORKAROUND FOR PRISMA + NEXT.JS BUNDLER BUG ---
-            # Find the actual engine file location in node_modules
-            QUERY_ENGINE_SOURCE=$(find ./node_modules -name "libquery_engine-rhel-openssl-1.1.x.so.node" | head -n 1)
-            # Copy it to the location where Next.js server expects it
-            if [ -f "$QUERY_ENGINE_SOURCE" ]; then
-              cp "$QUERY_ENGINE_SOURCE" "./.next/server/"
-            fi
-            # --- END WORKAROUND ---
-
             # Restart the application with PM2
-            echo "--- Build successful. Restarting application with PM2... ---"
-            pm2 restart mypage
-            echo "--- Deployment script finished. ---"
+            echo "--- (8/8) Restarting application with PM2 ---"
+            pm2 delete mypage || true
+            pm2 start "npm start" --name mypage
+            echo "--- Deployment finished successfully ---"
             
             # Save the process list
             pm2 save 
