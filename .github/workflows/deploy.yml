@@ -13,7 +13,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Deploy to Server
+      - name: Deploy and Build on Server
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -23,23 +23,37 @@ jobs:
             # Navigate to the app directory
             cd /var/www/mypage
 
-            # The git pull might fail if there are untracked local changes.
-            # A hard reset ensures the server is a perfect mirror of the repo.
+            # --- Aggressive Cleanup: The definitive fix for all cache issues ---
+            echo "--- Starting aggressive cleanup... ---"
+            rm -rf .next
+            rm -rf node_modules
+            echo "--- Cleanup finished. ---"
+
+            # Fetch the latest code
+            echo "--- Fetching latest code from GitHub... ---"
             git fetch --all
             git reset --hard origin/main
-            git pull origin main
+            
+            # --- Create .env file on the server ---
+            echo "--- Creating .env file... ---"
+            echo "DATABASE_URL='${{ secrets.DATABASE_URL }}'" > .env
+            echo "JWT_SECRET='${{ secrets.JWT_SECRET }}'" >> .env
+            echo ".env file created successfully."
 
-            # We are now deploying a pre-built package.
-            # We must ensure the server has the exact same node_modules
-            # that were used to create the build.
-            echo "--- Installing dependencies to match the build env ---"
+            # --- Install, Build, and Restart ---
+            echo "--- Installing dependencies... ---"
             npm install
+            
+            echo "--- Running Prisma DB Push... ---"
+            npx prisma db push
 
-            # No more build steps on the server.
-            # Just restart the application.
+            echo "--- Building application... ---"
+            npm run build
+
             echo "--- Restarting application with PM2... ---"
             pm2 restart mypage || pm2 start "npm start" --name mypage
-            echo "--- Deployment script finished. ---"
+            
+            echo "--- Deployment successfully completed! ---"
 
       - name: Create Deploy Directory
         uses: appleboy/ssh-action@master

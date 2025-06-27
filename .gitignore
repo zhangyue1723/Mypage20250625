@@ -4,6 +4,7 @@
 .pnp.js
 
 # Build outputs
+/.next/
 /out/
 /build/
 
