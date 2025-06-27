@@ -8,6 +8,15 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  const checkCookies = () => {
+    const cookies = document.cookie;
+    console.log('All cookies:', cookies);
+    const tokenMatch = cookies.match(/(?:^|; )token=([^;]*)/);
+    const token = tokenMatch ? decodeURIComponent(tokenMatch[1]) : null;
+    console.log('Token found in cookies:', token ? token.substring(0, 20) + '...' : 'No token');
+    return token;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -31,11 +40,19 @@ export default function LoginPage() {
         throw new Error(data.error || 'Login failed');
       }
       
-      console.log('Login successful, redirecting...');
-      // Add a small delay to ensure cookie is set before redirect
+      console.log('Login successful, checking cookies...');
+      
+      // Wait a bit for cookie to be set, then check
       setTimeout(() => {
-        window.location.href = '/admin/dashboard';
-      }, 100);
+        const token = checkCookies();
+        if (token) {
+          console.log('Token found, redirecting to dashboard...');
+          window.location.href = '/admin/dashboard';
+        } else {
+          console.error('No token found after login!');
+          setError('Login successful but token not set. Please try again.');
+        }
+      }, 200);
 
     } catch (err: any) {
       console.error('Login error:', err);
@@ -47,7 +64,8 @@ export default function LoginPage() {
 
   const handleTestClick = () => {
     console.log('Test button clicked!');
-    alert('Button click works!');
+    checkCookies();
+    alert('Button click works! Check console for cookie info.');
   };
 
   return (
@@ -176,7 +194,7 @@ export default function LoginPage() {
             cursor: 'pointer'
           }}
         >
-          Test Button (Click Me)
+          Test Button & Check Cookies
         </button>
       </form>
     </div>

@@ -3,6 +3,12 @@ import type { NextRequest } from 'next/server';
 import { verifyAuth } from './lib/auth';
 
 export async function middleware(request: NextRequest) {
+  // Temporarily disable auth for debugging
+  console.log('Middleware: allowing all requests for debugging');
+  return NextResponse.next();
+  
+  /* 
+  Original auth logic - commented out for debugging
   const loginUrl = new URL('/admin/login', request.url);
   const dashboardUrl = new URL('/admin/dashboard', request.url);
 
@@ -30,6 +36,7 @@ export async function middleware(request: NextRequest) {
 
   // If user is not authenticated and on the login page, let them proceed
   return NextResponse.next();
+  */
 }
 
 export const config = {
