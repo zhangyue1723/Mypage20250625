@@ -1,12 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   const checkCookies = () => {
     const cookies = document.cookie;
@@ -47,12 +49,20 @@ export default function LoginPage() {
         const token = checkCookies();
         if (token) {
           console.log('Token found, redirecting to dashboard...');
-          window.location.href = '/admin/dashboard';
+          console.log('Using Next.js router to redirect...');
+          try {
+            router.push('/admin/dashboard');
+            console.log('Router.push called successfully');
+          } catch (routerError) {
+            console.error('Router error:', routerError);
+            console.log('Falling back to window.location...');
+            window.location.href = '/admin/dashboard';
+          }
         } else {
           console.error('No token found after login!');
           setError('Login successful but token not set. Please try again.');
         }
-      }, 200);
+      }, 500); // Increased timeout
 
     } catch (err: any) {
       console.error('Login error:', err);
@@ -65,7 +75,8 @@ export default function LoginPage() {
   const handleTestClick = () => {
     console.log('Test button clicked!');
     checkCookies();
-    alert('Button click works! Check console for cookie info.');
+    console.log('Testing manual redirect...');
+    router.push('/admin/dashboard');
   };
 
   return (
