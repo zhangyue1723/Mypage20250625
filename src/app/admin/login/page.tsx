@@ -1,14 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,7 +32,8 @@ export default function LoginPage() {
       }
       
       console.log('Login successful, redirecting...');
-      router.push('/admin/dashboard');
+      // Use window.location for a full page reload instead of client-side routing
+      window.location.href = '/admin/dashboard';
 
     } catch (err: any) {
       console.error('Login error:', err);
