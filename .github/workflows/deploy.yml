@@ -13,47 +13,53 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Deploy and Build on Server
+      - name: Deploy, Build, and Restart
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            # Navigate to the app directory
+            # Navigate to the application directory
             cd /var/www/mypage
 
-            # --- Aggressive Cleanup: The definitive fix for all cache issues ---
-            echo "--- Starting aggressive cleanup... ---"
+            # Aggressively clean up old artifacts to ensure a pristine environment
+            echo "--- (1/7) Cleaning up old artifacts... ---"
             rm -rf .next
             rm -rf node_modules
-            echo "--- Cleanup finished. ---"
 
-            # Fetch the latest code
-            echo "--- Fetching latest code from GitHub... ---"
+            # Fetch the absolute latest version from the repository
+            echo "--- (2/7) Fetching latest code... ---"
             git fetch --all
             git reset --hard origin/main
-            
-            # --- Create .env file on the server ---
-            echo "--- Creating .env file... ---"
+
+            # Create the .env file from secrets for the application to use
+            echo "--- (3/7) Creating .env file... ---"
             echo "DATABASE_URL='${{ secrets.DATABASE_URL }}'" > .env
             echo "JWT_SECRET='${{ secrets.JWT_SECRET }}'" >> .env
-            echo ".env file created successfully."
 
-            # --- Install, Build, and Restart ---
-            echo "--- Installing dependencies... ---"
-            npm install
-            
-            echo "--- Running Prisma DB Push... ---"
+            # Install dependencies using 'npm ci' for a clean, reliable install
+            echo "--- (4/7) Installing dependencies with 'npm ci'... ---"
+            npm ci
+
+            # Ensure the database schema is up to date
+            echo "--- (5/7) Pushing database schema... ---"
             npx prisma db push
+            
+            # This script needs ts-node, which we should have from npm ci
+            echo "--- (6/7) Ensuring admin user exists (Idempotent)... ---"
+            npm run register-admin
 
-            echo "--- Building application... ---"
+            # Build the application on the server
+            echo "--- (7/7) Building application... ---"
             npm run build
 
-            echo "--- Restarting application with PM2... ---"
-            pm2 restart mypage || pm2 start "npm start" --name mypage
+            # Atomically delete and restart the application with PM2
+            echo "--- (Final Step) Restarting application via PM2... ---"
+            pm2 delete mypage || true
+            pm2 start "npm start" --name mypage
             
-            echo "--- Deployment successfully completed! ---"
+            echo "--- Deployment FINISHED ---"
 
       - name: Create Deploy Directory
         uses: appleboy/ssh-action@master
@@ -118,7 +124,7 @@ jobs:
             fi
             
             # Create admin user (idempotent)
-            npx ts-node --project prisma/tsconfig.seed.json prisma/registerAdmin.ts
+            npm run register-admin
 
             # --- WORKAROUND FOR PRISMA + NEXT.JS BUNDLER BUG ---
             # Find the actual engine file location in node_modules
