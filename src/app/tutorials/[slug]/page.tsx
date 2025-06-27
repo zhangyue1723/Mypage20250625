@@ -4,6 +4,9 @@ import prisma from '@/lib/prisma';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 
+// Force dynamic rendering to avoid build-time database issues
+export const dynamic = 'force-dynamic';
+
 async function getTutorial(slug: string) {
     const tutorial = await prisma.tutorial.findUnique({
         where: {
@@ -18,15 +21,21 @@ async function getTutorial(slug: string) {
 }
 
 export async function generateStaticParams() {
-    const tutorials = await prisma.tutorial.findMany({
-        select: {
-            slug: true,
-        },
-    });
+    try {
+        const tutorials = await prisma.tutorial.findMany({
+            select: {
+                slug: true,
+            },
+        });
 
-    return tutorials.map((tutorial) => ({
-        slug: tutorial.slug,
-    }));
+        return tutorials.map((tutorial) => ({
+            slug: tutorial.slug,
+        }));
+    } catch (error) {
+        console.log('Database not accessible during build, returning empty static params:', error);
+        // Return empty array if database is not accessible during build
+        return [];
+    }
 }
 
 export async function generateMetadata(props: { params: { slug: string } }): Promise<Metadata> {

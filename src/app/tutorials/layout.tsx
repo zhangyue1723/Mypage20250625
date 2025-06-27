@@ -5,19 +5,22 @@ import { notFound } from "next/navigation";
 export const dynamic = 'force-dynamic';
 
 async function getTutorials() {
-  const tutorials = await prisma.tutorial.findMany({
-    select: {
-      title: true,
-      slug: true,
-    },
-    orderBy: {
-      order: 'asc',
-    },
-  });
-  if (!tutorials) {
-    notFound();
+  try {
+    const tutorials = await prisma.tutorial.findMany({
+      select: {
+        title: true,
+        slug: true,
+      },
+      orderBy: {
+        order: 'asc',
+      },
+    });
+    return tutorials || [];
+  } catch (error) {
+    console.log('Database not accessible during build for tutorials layout:', error);
+    // Return empty array if database is not accessible during build
+    return [];
   }
-  return tutorials;
 }
 
 export default async function TutorialLayout({
@@ -39,13 +42,19 @@ export default async function TutorialLayout({
             <aside className="hidden md:block md:col-span-3 bg-gray-50 p-4 rounded">
                 <h3 className="text-lg font-semibold mb-4">Tutorials</h3>
                 <ul>
-                    {tutorials.map((tutorial) => (
-                    <li key={tutorial.slug} className="mb-2">
-                        <Link href={`/tutorials/${tutorial.slug}`} className="text-blue-600 hover:underline">
-                        {tutorial.title}
-                        </Link>
-                    </li>
-                    ))}
+                    {tutorials.length > 0 ? (
+                        tutorials.map((tutorial) => (
+                        <li key={tutorial.slug} className="mb-2">
+                            <Link href={`/tutorials/${tutorial.slug}`} className="text-blue-600 hover:underline">
+                            {tutorial.title}
+                            </Link>
+                        </li>
+                        ))
+                    ) : (
+                        <li className="text-gray-500 text-sm">
+                            No tutorials available yet.
+                        </li>
+                    )}
                 </ul>
             </aside>
 
