@@ -7,11 +7,15 @@ export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIsLoading(true);
+
+    console.log('Form submitted with:', { username, password });
 
     try {
       const res = await fetch('/api/auth/login', {
@@ -22,36 +26,74 @@ export default function LoginPage() {
         body: JSON.stringify({ username, password }),
       });
 
+      console.log('Response status:', res.status);
+
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || 'Login failed');
       }
-
-      // No longer need to handle the token here, it's in an httpOnly cookie.
-      // const { token } = await res.json();
-      // localStorage.setItem('token', token);
       
+      console.log('Login successful, redirecting...');
       router.push('/admin/dashboard');
 
     } catch (err: any) {
+      console.error('Login error:', err);
       setError(err.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  const handleTestClick = () => {
+    console.log('Test button clicked!');
+    alert('Button click works!');
+  };
+
   return (
-    <div className="flex items-center justify-center min-h-screen bg-bg-sidebar">
+    <div style={{ 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center', 
+      minHeight: '100vh',
+      backgroundColor: '#f5f5f5'
+    }}>
       <form
         onSubmit={handleSubmit}
-        className="p-8 bg-bg-main rounded-lg shadow-md w-full max-w-sm"
+        style={{
+          padding: '32px',
+          backgroundColor: 'white',
+          borderRadius: '8px',
+          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+          width: '100%',
+          maxWidth: '400px'
+        }}
       >
-        <h1 className="text-2xl font-bold mb-6 text-center text-text-heading">
+        <h1 style={{ 
+          fontSize: '24px', 
+          fontWeight: 'bold', 
+          marginBottom: '24px', 
+          textAlign: 'center',
+          color: '#333'
+        }}>
           Admin Login
         </h1>
-        {error && <p className="text-red-500 text-center mb-4">{error}</p>}
-        <div className="mb-4">
+        
+        {error && (
+          <p style={{ color: 'red', textAlign: 'center', marginBottom: '16px' }}>
+            {error}
+          </p>
+        )}
+        
+        <div style={{ marginBottom: '16px' }}>
           <label
             htmlFor="username"
-            className="block text-text-main text-sm font-bold mb-2"
+            style={{ 
+              display: 'block', 
+              color: '#333', 
+              fontSize: '14px', 
+              fontWeight: 'bold', 
+              marginBottom: '8px' 
+            }}
           >
             Username
           </label>
@@ -60,14 +102,27 @@ export default function LoginPage() {
             id="username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-text-main leading-tight focus:outline-none focus:shadow-outline"
+            style={{
+              width: '100%',
+              padding: '8px 12px',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              fontSize: '16px'
+            }}
             required
           />
         </div>
-        <div className="mb-6">
+        
+        <div style={{ marginBottom: '24px' }}>
           <label
             htmlFor="password"
-            className="block text-text-main text-sm font-bold mb-2"
+            style={{ 
+              display: 'block', 
+              color: '#333', 
+              fontSize: '14px', 
+              fontWeight: 'bold', 
+              marginBottom: '8px' 
+            }}
           >
             Password
           </label>
@@ -76,18 +131,52 @@ export default function LoginPage() {
             id="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-text-main mb-3 leading-tight focus:outline-none focus:shadow-outline"
+            style={{
+              width: '100%',
+              padding: '8px 12px',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              fontSize: '16px'
+            }}
             required
           />
         </div>
-        <div className="flex items-center justify-between">
-          <button
-            type="submit"
-            className="bg-brand-blue hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full"
-          >
-            Sign In
-          </button>
-        </div>
+        
+        <button
+          type="submit"
+          disabled={isLoading}
+          style={{
+            width: '100%',
+            padding: '12px',
+            backgroundColor: isLoading ? '#ccc' : '#3b82f6',
+            color: 'white',
+            fontWeight: 'bold',
+            border: 'none',
+            borderRadius: '4px',
+            fontSize: '16px',
+            cursor: isLoading ? 'not-allowed' : 'pointer',
+            marginBottom: '12px'
+          }}
+        >
+          {isLoading ? 'Signing In...' : 'Sign In'}
+        </button>
+        
+        <button
+          type="button"
+          onClick={handleTestClick}
+          style={{
+            width: '100%',
+            padding: '8px',
+            backgroundColor: '#10b981',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            fontSize: '14px',
+            cursor: 'pointer'
+          }}
+        >
+          Test Button (Click Me)
+        </button>
       </form>
     </div>
   );
