@@ -1,19 +1,28 @@
 import prisma from '@/lib/prisma';
 import Link from 'next/link';
 
+// Force dynamic rendering to avoid build-time database issues
+export const dynamic = 'force-dynamic';
+
 async function getTutorials() {
-  const tutorials = await prisma.tutorial.findMany({
-    select: {
-      id: true,
-      title: true,
-      slug: true,
-      updatedAt: true,
-    },
-    orderBy: {
-      order: 'asc',
-    },
-  });
-  return tutorials;
+  try {
+    const tutorials = await prisma.tutorial.findMany({
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        updatedAt: true,
+      },
+      orderBy: {
+        order: 'asc',
+      },
+    });
+    return tutorials || [];
+  } catch (error) {
+    console.log('Database not accessible during build for admin dashboard:', error);
+    // Return empty array if database is not accessible during build
+    return [];
+  }
 }
 
 export default async function DashboardPage() {
@@ -50,30 +59,38 @@ export default async function DashboardPage() {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {tutorials.map((tutorial) => (
-              <tr key={tutorial.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-text-main">
-                  {tutorial.title}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {tutorial.slug}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {new Date(tutorial.updatedAt).toLocaleString()}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <Link
-                    href={`/admin/editor/${tutorial.slug}`}
-                    className="text-brand-blue hover:text-blue-800 mr-4"
-                  >
-                    Edit
-                  </Link>
-                  <button className="text-red-600 hover:text-red-800">
-                    Delete
-                  </button>
+            {tutorials.length > 0 ? (
+              tutorials.map((tutorial) => (
+                <tr key={tutorial.id}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-text-main">
+                    {tutorial.title}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {tutorial.slug}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {new Date(tutorial.updatedAt).toLocaleString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <Link
+                      href={`/admin/editor/${tutorial.slug}`}
+                      className="text-brand-blue hover:text-blue-800 mr-4"
+                    >
+                      Edit
+                    </Link>
+                    <button className="text-red-600 hover:text-red-800">
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={4} className="px-6 py-4 text-center text-gray-500">
+                  No tutorials available. Create your first tutorial!
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>
