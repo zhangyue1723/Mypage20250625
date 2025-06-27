@@ -44,7 +44,12 @@ export async function POST(request: Request) {
       secure: process.env.NODE_ENV === 'production',
       maxAge: 60 * 60, // 1 hour
       path: '/',
+      sameSite: 'lax',
     });
+
+    console.log('Cookie set with token:', token.substring(0, 20) + '...');
+    console.log('Environment:', process.env.NODE_ENV);
+    console.log('Secure cookie:', process.env.NODE_ENV === 'production');
 
     return response;
 

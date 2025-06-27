@@ -32,8 +32,10 @@ export default function LoginPage() {
       }
       
       console.log('Login successful, redirecting...');
-      // Use window.location for a full page reload instead of client-side routing
-      window.location.href = '/admin/dashboard';
+      // Add a small delay to ensure cookie is set before redirect
+      setTimeout(() => {
+        window.location.href = '/admin/dashboard';
+      }, 100);
 
     } catch (err: any) {
       console.error('Login error:', err);
