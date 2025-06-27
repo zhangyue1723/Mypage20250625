@@ -51,7 +51,7 @@ jobs:
             
             # Create the production .env file
             echo "--- (2/8) Creating .env file ---"
-            echo "DATABASE_URL='${{ secrets.DATABASE_URL }}'" > .env
+            echo "DATABASE_URL='file:./prisma/dev.db'" > .env
             echo "JWT_SECRET='${{ secrets.JWT_SECRET }}'" >> .env
             
             # Forcefully clean the npm cache
