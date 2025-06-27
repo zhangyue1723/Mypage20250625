@@ -1,3 +1,7 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import prisma from '@/lib/prisma';
 import Link from 'next/link';
 
@@ -6,27 +10,64 @@ export const dynamic = 'force-dynamic';
 
 async function getTutorials() {
   try {
-    const tutorials = await prisma.tutorial.findMany({
-      select: {
-        id: true,
-        title: true,
-        slug: true,
-        updatedAt: true,
-      },
-      orderBy: {
-        order: 'asc',
-      },
+    const response = await fetch('/api/tutorials', {
+      method: 'GET',
+      credentials: 'include', // Include cookies
     });
-    return tutorials || [];
+    
+    if (response.ok) {
+      return await response.json();
+    } else {
+      console.error('Failed to fetch tutorials:', response.status);
+      return [];
+    }
   } catch (error) {
-    console.log('Database not accessible during build for admin dashboard:', error);
-    // Return empty array if database is not accessible during build
+    console.log('Error fetching tutorials:', error);
     return [];
   }
 }
 
-export default async function DashboardPage() {
-  const tutorials = await getTutorials();
+export default function DashboardPage() {
+  const [tutorials, setTutorials] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    console.log('Dashboard component mounted');
+    
+    // Check authentication
+    const checkAuth = () => {
+      const cookies = document.cookie;
+      console.log('Checking cookies:', cookies);
+      
+      const tokenMatch = cookies.match(/(?:^|; )token=([^;]*)/);
+      const token = tokenMatch ? decodeURIComponent(tokenMatch[1]) : null;
+      
+      if (token) {
+        console.log('Token found, user authenticated');
+        setIsAuthenticated(true);
+        // Load tutorials
+        getTutorials().then(data => {
+          setTutorials(data || []);
+          setIsLoading(false);
+        });
+      } else {
+        console.log('No token found, redirecting to login');
+        router.push('/admin/login');
+      }
+    };
+
+    checkAuth();
+  }, [router]);
+
+  if (!isAuthenticated) {
+    return <div className="p-8">Checking authentication...</div>;
+  }
+
+  if (isLoading) {
+    return <div className="p-8">Loading...</div>;
+  }
 
   return (
     <div className="p-8">
