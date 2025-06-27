@@ -38,20 +38,24 @@ jobs:
             echo "DATABASE_URL='${{ secrets.DATABASE_URL }}'" > .env
             echo "JWT_SECRET='${{ secrets.JWT_SECRET }}'" >> .env
 
+            # Forcefully clean the npm cache to eliminate potential corruption
+            echo "--- (4/8) Cleaning npm cache... ---"
+            npm cache clean --force
+
             # Install dependencies using 'npm ci' for a clean, reliable install
-            echo "--- (4/7) Installing dependencies with 'npm ci'... ---"
+            echo "--- (5/8) Installing dependencies with 'npm ci'... ---"
             npm ci
 
             # Ensure the database schema is up to date
-            echo "--- (5/7) Pushing database schema... ---"
+            echo "--- (6/8) Pushing database schema... ---"
             npx prisma db push
             
             # This script needs ts-node, which we should have from npm ci
-            echo "--- (6/7) Ensuring admin user exists (Idempotent)... ---"
+            echo "--- (7/8) Ensuring admin user exists (Idempotent)... ---"
             npm run register-admin
 
             # Build the application on the server
-            echo "--- (7/7) Building application... ---"
+            echo "--- (8/8) Building application... ---"
             npm run build
 
             # Atomically delete and restart the application with PM2
