@@ -92,5 +92,9 @@ jobs:
             pm2 start "npm start" --name mypage
             echo "--- Deployment finished successfully ---"
             
+            # Debug login issues
+            echo "--- (Debug) Checking login system ---"
+            node debug-login.js
+            
             # Save the process list
             pm2 save 
