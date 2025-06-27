@@ -84,6 +84,7 @@ export async function POST(request: Request) {
       maxAge: 60 * 60, // 1 hour
       path: '/',
       sameSite: 'lax', // Compatible with HTTP and IP addresses
+      domain: undefined, // Don't set domain for IP access
     });
 
     console.log('Cookie set with token:', token.substring(0, 20) + '...');
