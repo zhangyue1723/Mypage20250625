@@ -77,15 +77,17 @@ export async function POST(request: Request) {
 
     const response = NextResponse.json({ message: 'Login successful' });
     
+    // More permissive cookie settings for HTTP and IP-based access
     response.cookies.set('token', token, {
-      httpOnly: true,
-      secure: false, // Disable secure for HTTP connections
+      httpOnly: false, // Allow client-side access for debugging
+      secure: false, // Always false for HTTP
       maxAge: 60 * 60, // 1 hour
       path: '/',
-      sameSite: 'lax',
+      sameSite: 'lax', // Compatible with HTTP and IP addresses
     });
 
     console.log('Cookie set with token:', token.substring(0, 20) + '...');
+    console.log('Cookie settings: httpOnly=false, secure=false, sameSite=lax');
     console.log('Login completed successfully');
 
     return response;
