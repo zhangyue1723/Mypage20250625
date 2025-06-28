@@ -27,36 +27,53 @@ jobs:
       env:
         NEXT_TELEMETRY_DISABLED: 1
         
-    - name: Setup SSH key
-      run: |
-        mkdir -p ~/.ssh
-        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
-        
-    - name: Deploy to server
-      run: |
-        # 同步文件到服务器
-        rsync -avz --delete \
-          --exclude='.git' \
-          --exclude='node_modules' \
-          --exclude='.env.local' \
-          --exclude='.next' \
-          ./ ${{ secrets.SSH_USERNAME }}@${{ secrets.SERVER_HOST }}:/var/www/lammps-tutorial/
+    - name: Create Deploy Directory
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SERVER_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          mkdir -p /var/www/lammps-tutorial
           
-        # 在服务器上安装依赖并构建
-        ssh ${{ secrets.SSH_USERNAME }}@${{ secrets.SERVER_HOST }} << 'EOF'
+    - name: Deploy files via rsync
+      run: |
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > private_key.pem
+        chmod 600 private_key.pem
+        rsync -avz --delete \
+          -e "ssh -o StrictHostKeyChecking=no -i private_key.pem" \
+          --exclude ".git*" \
+          --exclude "node_modules" \
+          --exclude ".next" \
+          ./ ${{ secrets.SSH_USERNAME }}@${{ secrets.SERVER_HOST }}:/var/www/lammps-tutorial/
+        rm private_key.pem
+        
+    - name: Build and Start on Server
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SERVER_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: 22
+        script: |
           cd /var/www/lammps-tutorial
           
+          # 清理旧的构建文件
+          rm -rf .next
+          rm -rf node_modules
+          
           # 安装依赖
-          npm ci --production=false
+          npm ci
           
           # 构建应用
           npm run build
           
           # 重启PM2应用
-          pm2 restart lammps-tutorial || pm2 start npm --name "lammps-tutorial" -- start
+          pm2 delete lammps-tutorial || true
+          pm2 start npm --name "lammps-tutorial" -- start
+          
+          # 保存PM2配置
+          pm2 save
           
           # 显示状态
-          pm2 list
-        EOF 
+          pm2 list 
